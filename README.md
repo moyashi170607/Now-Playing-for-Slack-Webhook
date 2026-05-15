@@ -3,6 +3,8 @@
 再生中の音楽をSlackに投稿するデスクトップアプリです。/
 A desktop app that posts your currently playing music to Slack.
 
+![スクリーンショット](assets/img/gui.png)
+
 > [!WARNING]
 > 現在はUIは日本語のみです。
 > UIの多言語化へのコントリビュートを歓迎しています！
