@@ -1,6 +1,6 @@
 # Now Playing for Slack Webhook
 
-再生中の音楽をSlackに投稿するデスクトップアプリです。/
+再生中の音楽をSlackに投稿するデスクトップアプリです。\
 A desktop app that posts your currently playing music to Slack.
 
 ![スクリーンショット](assets/img/gui.png)
