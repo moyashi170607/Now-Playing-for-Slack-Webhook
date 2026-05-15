@@ -94,10 +94,11 @@ impl NowPlayingApp {
         let text = selected
             .iter()
             .map(|e| {
-                format!(
-                    "{} - {} /{} 収録",
-                    e.metadata.title, e.metadata.artist, e.metadata.album
-                )
+                if e.metadata.album.is_empty() {
+                        format!("{} - {}", e.metadata.title, e.metadata.artist)
+                    } else {
+                        format!("{} - {} /{} 収録", e.metadata.title, e.metadata.artist, e.metadata.album)
+                    }
             })
             .collect::<Vec<_>>()
             .join("\n");
@@ -116,10 +117,11 @@ impl NowPlayingApp {
             ui.label("再生中の曲なし");
         } else {
             for entry in &mut self.entries {
-                let label = format!(
-                    "{} - {} / {} 収録",
-                    entry.metadata.title, entry.metadata.artist, entry.metadata.album
-                );
+                let label = if entry.metadata.album.is_empty() {
+                    format!("{} - {}", entry.metadata.title, entry.metadata.artist)
+                } else {
+                    format!("{} - {} / {} 収録", entry.metadata.title, entry.metadata.artist, entry.metadata.album)
+                };
                 ui.checkbox(&mut entry.selected, label);
             }
         }
