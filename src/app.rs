@@ -3,6 +3,8 @@ use std::time::{Duration, Instant};
 
 const FETCH_INTERVAL: Duration = Duration::from_secs(1);
 
+const STORAGE_KEY: &str = "NowPlayingForSlackWebhook";
+
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct MusicEntry {
     pub metadata: MusicMetadata,
@@ -58,7 +60,7 @@ impl NowPlayingApp {
 
         //ストレージから復元
         if let Some(storage) = cc.storage {
-            eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
+            eframe::get_value(storage, STORAGE_KEY).unwrap_or_default()
         } else {
             Default::default()
         }
@@ -95,10 +97,13 @@ impl NowPlayingApp {
             .iter()
             .map(|e| {
                 if e.metadata.album.is_empty() {
-                        format!("{} - {}", e.metadata.title, e.metadata.artist)
-                    } else {
-                        format!("{} - {} /{} 収録", e.metadata.title, e.metadata.artist, e.metadata.album)
-                    }
+                    format!("{} - {}", e.metadata.title, e.metadata.artist)
+                } else {
+                    format!(
+                        "{} - {} /{} 収録",
+                        e.metadata.title, e.metadata.artist, e.metadata.album
+                    )
+                }
             })
             .collect::<Vec<_>>()
             .join("\n");
@@ -120,7 +125,10 @@ impl NowPlayingApp {
                 let label = if entry.metadata.album.is_empty() {
                     format!("{} - {}", entry.metadata.title, entry.metadata.artist)
                 } else {
-                    format!("{} - {} / {} 収録", entry.metadata.title, entry.metadata.artist, entry.metadata.album)
+                    format!(
+                        "{} - {} / {} 収録",
+                        entry.metadata.title, entry.metadata.artist, entry.metadata.album
+                    )
                 };
                 ui.checkbox(&mut entry.selected, label);
             }
@@ -169,6 +177,6 @@ impl eframe::App for NowPlayingApp {
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        eframe::set_value(storage, eframe::APP_KEY, self);
+        eframe::set_value(storage, STORAGE_KEY, self);
     }
 }
