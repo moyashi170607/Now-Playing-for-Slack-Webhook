@@ -1,3 +1,4 @@
+#![allow(unused)]
 use crate::fetch::windows_fetch::get_music_metadata;
 
 pub fn _print_metadata() {
