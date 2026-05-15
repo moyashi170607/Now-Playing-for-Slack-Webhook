@@ -1,4 +1,4 @@
-use crate::fetch::{MusicMetadata, windows_fetch::get_music_metadata};
+use crate::fetch::{MusicMetadata, get_music_metadata};
 use std::time::{Duration, Instant};
 
 const FETCH_INTERVAL: Duration = Duration::from_secs(1);
