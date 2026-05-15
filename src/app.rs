@@ -1,17 +1,31 @@
 use crate::fetch::MusicMetadata;
 
 #[derive(serde::Deserialize, serde::Serialize)]
+pub struct MusicEntry {
+    pub metadata: MusicMetadata,
+    pub selected: bool,
+}
+
+impl MusicEntry {
+    pub fn new(metadata: MusicMetadata) -> Self {
+        Self {
+            metadata,
+            selected: false,
+        }
+    }
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)]
 pub struct NowPlayingApp {
-    metadatas: Option<Vec<MusicMetadata>>,
+    entries: Vec<MusicEntry>,
     slack_webhook: Option<String>,
 }
 
 impl Default for NowPlayingApp {
     fn default() -> Self {
         Self {
-            // Example stuff:
-            metadatas: None,
+            entries: Vec::new(),
             slack_webhook: None,
         }
     }
@@ -55,20 +69,24 @@ impl NowPlayingApp {
     pub fn post(&mut self) {}
 
     pub fn render(&mut self, ui: &mut egui::Ui) {
-        let music_text = match &self.metadatas {
-            Some(list) if !list.is_empty() => {
-                format!("{} - {} / {}", list[0].title, list[0].artist, list[0].album)
+        if self.entries.is_empty() {
+            ui.label("再生中の曲なし");
+        } else {
+            for entry in &mut self.entries {
+                let label = format!(
+                    "{} - {} / {}",
+                    entry.metadata.title, entry.metadata.artist, entry.metadata.album
+                );
+                ui.checkbox(&mut entry.selected, label);
             }
-            _ => "再生中の曲なし".to_string(),
-        };
-        ui.label(music_text);
+        }
 
         ui.separator();
 
         ui.label("Slack Webhook URL:");
         ui.scope(|ui| {
             ui.visuals_mut().widgets.inactive.bg_stroke =
-                egui::Stroke::new(2.0, egui::Color32::from_rgb(200, 100, 100));
+                egui::Stroke::new(2.0, egui::Color32::from_rgb(0, 119, 255));
             ui.text_edit_singleline(self.slack_webhook.get_or_insert_with(String::new));
         });
 
