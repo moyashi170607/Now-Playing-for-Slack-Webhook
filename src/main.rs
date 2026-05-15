@@ -2,7 +2,7 @@ mod app;
 mod debug;
 mod fetch;
 
-use crate::app::NowPlayingApp;
+use crate::{app::NowPlayingApp, debug::_print_metadata};
 
 fn main() {
     let native_options = eframe::NativeOptions {

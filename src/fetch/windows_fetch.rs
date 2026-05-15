@@ -30,10 +30,16 @@ pub fn get_music_metadata() -> Option<Vec<MusicMetadata>> {
                 Ok(p) => p,
                 Err(_) => continue,
             };
+            let raw_artist = props.Artist().unwrap_or_default().to_string();
+            let (artist, album) = if let Some((a, al)) = raw_artist.split_once(" \u{2014} ") {
+                (a.to_string(), al.to_string())
+            } else {
+                (raw_artist, props.AlbumTitle().unwrap_or_default().to_string())
+            };
             results.push(MusicMetadata {
                 title: props.Title().unwrap_or_default().to_string(),
-                artist: props.Artist().unwrap_or_default().to_string(),
-                album: props.AlbumTitle().unwrap_or_default().to_string(),
+                artist,
+                album,
             });
         }
 

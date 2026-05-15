@@ -1,4 +1,7 @@
-use crate::fetch::MusicMetadata;
+use crate::fetch::{MusicMetadata, windows_fetch::get_music_metadata};
+use std::time::{Duration, Instant};
+
+const FETCH_INTERVAL: Duration = Duration::from_secs(1);
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct MusicEntry {
@@ -6,27 +9,25 @@ pub struct MusicEntry {
     pub selected: bool,
 }
 
-impl MusicEntry {
-    pub fn new(metadata: MusicMetadata) -> Self {
-        Self {
-            metadata,
-            selected: false,
-        }
-    }
-}
-
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)]
 pub struct NowPlayingApp {
-    entries: Vec<MusicEntry>,
+    user_name: Option<String>,
     slack_webhook: Option<String>,
+
+    #[serde(skip)]
+    entries: Vec<MusicEntry>,
+    #[serde(skip)]
+    last_fetch: Option<Instant>,
 }
 
 impl Default for NowPlayingApp {
     fn default() -> Self {
         Self {
-            entries: Vec::new(),
+            user_name: Some(String::from("ユーザー")),
             slack_webhook: None,
+            entries: Vec::new(),
+            last_fetch: None,
         }
     }
 }
@@ -57,16 +58,58 @@ impl NowPlayingApp {
 
         //ストレージから復元
         if let Some(storage) = cc.storage {
-            storage
-                .get_string(eframe::APP_KEY)
-                .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or_default()
+            eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
         } else {
             Default::default()
         }
     }
 
-    pub fn post(&mut self) {}
+    fn fetch_metadata(&mut self) {
+        let new_list = get_music_metadata().unwrap_or_default();
+        self.entries = new_list
+            .into_iter()
+            .map(|metadata| {
+                let selected = self
+                    .entries
+                    .iter()
+                    .find(|e| {
+                        e.metadata.title == metadata.title && e.metadata.artist == metadata.artist
+                    })
+                    .map(|e| e.selected)
+                    .unwrap_or(false);
+                MusicEntry { metadata, selected }
+            })
+            .collect();
+        self.last_fetch = Some(Instant::now());
+    }
+
+    pub fn post(&mut self, webhook: Option<String>) {
+        let Some(url) = webhook else { return };
+
+        let selected: Vec<&MusicEntry> = self.entries.iter().filter(|e| e.selected).collect();
+        if selected.is_empty() {
+            return;
+        }
+
+        let text = selected
+            .iter()
+            .map(|e| {
+                format!(
+                    "{} - {} /{} 収録",
+                    e.metadata.title, e.metadata.artist, e.metadata.album
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        let username = format!(
+            "{}の再生中の曲",
+            self.user_name.as_deref().unwrap_or("ユーザー")
+        );
+
+        let body = serde_json::json!({"username":username ,"text": text });
+        let _ = ureq::post(&url).send_json(body);
+    }
 
     pub fn render(&mut self, ui: &mut egui::Ui) {
         if self.entries.is_empty() {
@@ -74,7 +117,7 @@ impl NowPlayingApp {
         } else {
             for entry in &mut self.entries {
                 let label = format!(
-                    "{} - {} / {}",
+                    "{} - {} / {} 収録",
                     entry.metadata.title, entry.metadata.artist, entry.metadata.album
                 );
                 ui.checkbox(&mut entry.selected, label);
@@ -82,6 +125,13 @@ impl NowPlayingApp {
         }
 
         ui.separator();
+
+        ui.label("ユーザー名:");
+        ui.scope(|ui| {
+            ui.visuals_mut().widgets.inactive.bg_stroke =
+                egui::Stroke::new(2.0, egui::Color32::from_rgb(0, 119, 255));
+            ui.text_edit_singleline(self.user_name.get_or_insert_with(String::new));
+        });
 
         ui.label("Slack Webhook URL:");
         ui.scope(|ui| {
@@ -92,12 +142,25 @@ impl NowPlayingApp {
 
         ui.separator();
 
-        if ui.button("投稿").clicked() {}
+        if ui.button("投稿").clicked() {
+            self.post(self.slack_webhook.clone());
+        }
     }
 }
 
 impl eframe::App for NowPlayingApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let should_fetch = self
+            .last_fetch
+            .map(|t| t.elapsed() >= FETCH_INTERVAL)
+            .unwrap_or(true);
+
+        if should_fetch {
+            self.fetch_metadata();
+        }
+
+        ui.ctx().request_repaint_after(FETCH_INTERVAL);
+
         egui::CentralPanel::default().show_inside(ui, |ui| {
             self.render(ui);
         });
