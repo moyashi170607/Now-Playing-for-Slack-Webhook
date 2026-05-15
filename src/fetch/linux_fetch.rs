@@ -1,3 +1,6 @@
+// WARNING:このコードは実機確認されていません！
+// WARNING: This code has not been tested on real hardware!
+
 use mpris::PlayerFinder;
 
 use crate::fetch::MusicMetadata;
@@ -24,9 +27,16 @@ pub fn get_music_metadata() -> Option<Vec<MusicMetadata>> {
             let (artist, album) = if let Some((a, al)) = raw_artist.split_once(" \u{2014} ") {
                 (a.to_string(), al.to_string())
             } else {
-                (raw_artist, meta.album_name().unwrap_or_default().to_string())
+                (
+                    raw_artist,
+                    meta.album_name().unwrap_or_default().to_string(),
+                )
             };
-            Some(MusicMetadata { title, artist, album })
+            Some(MusicMetadata {
+                title,
+                artist,
+                album,
+            })
         })
         .collect();
 
