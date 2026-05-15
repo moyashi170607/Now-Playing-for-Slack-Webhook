@@ -12,7 +12,7 @@ fn main() {
         ..Default::default()
     };
     eframe::run_native(
-        "eframe template",
+        "Now Playing for Slack Webhook",
         native_options,
         Box::new(|cc| Ok(Box::new(NowPlayingApp::new(cc)))),
     )

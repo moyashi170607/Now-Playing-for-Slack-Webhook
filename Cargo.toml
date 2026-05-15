@@ -1,5 +1,5 @@
 [package]
-name = "now_playing"
+name = "now_playing_for_slack_webhook"
 version = "0.1.0"
 edition = "2024"
 
