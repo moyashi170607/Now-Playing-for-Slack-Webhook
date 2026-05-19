@@ -117,7 +117,13 @@ impl NowPlayingApp {
         let _ = ureq::post(&url).send_json(body);
     }
 
-    pub fn render(&mut self, ui: &mut egui::Ui) {
+    pub fn left_render(&mut self, ui: &mut egui::Ui) {
+        ui.centered_and_justified(|ui| {
+            ui.label("画像");
+        });
+    }
+
+    pub fn center_render(&mut self, ui: &mut egui::Ui) {
         if self.entries.is_empty() {
             ui.label("再生中の曲なし");
         } else {
@@ -171,8 +177,15 @@ impl eframe::App for NowPlayingApp {
 
         ui.ctx().request_repaint_after(FETCH_INTERVAL);
 
+        // egui::Panel::left("image_panel")
+        //     .exact_size(100.0)
+        //     .resizable(false)
+        //     .show_inside(ui, |ui| {
+        //         self.left_render(ui);
+        //     });
+
         egui::CentralPanel::default().show_inside(ui, |ui| {
-            self.render(ui);
+            self.center_render(ui);
         });
     }
 
